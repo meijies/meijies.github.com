@@ -1,1 +1,17 @@
-#+TITLE: Hadoop
+#+TITLE: 基础知识
+* Service
+在这里，我大胆将Hadoop中的Service定义为一组独立运行的功能集合。这个独立运行表示
+它们可能单独运行在一个进程或者一个线程中。在Apache Yarn中，Resource Manager和
+Node Manager都是一个Service，而它们本身又由许多更细粒度的服务构成。既然Service是
+独立运行，它们就会有自己的生命周期，相应的初始化，启动，停止等实现。
+** Service的生命周期
+正常情况下Service的生命周期应该是 uninited -> inited -> started -> stopped。在转
+变到各个状态之前，它们对应的方法会被调用（例如调用Service的init方法使得Service的
+状态从uninited转变为inited）
+
+|          | uninited | inited | started | stopped |
+|----------+----------+--------+---------+---------|
+| uninited | false    | true   | false   | true    |
+| inited   | false    | true   | true    | true    |
+| started  | false    | false  | true    | true    |
+| stopped  | false    | false  | false   | true    |
