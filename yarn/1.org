@@ -1,10 +1,10 @@
 #+TITLE: Apache Yarn 源码阅读基础知识
-* Service
+** Service
 在这里，我大胆将Hadoop中的Service定义为一组独立运行的功能集合。这个独立运行表示
 它们可能单独运行在一个进程或者一个线程中。在Apache Yarn中，Resource Manager和
 Node Manager都是一个Service，而它们本身又由许多更细粒度的服务构成。既然Service是
 独立运行，它们就会有自己的生命周期，相应的初始化，启动，停止等实现。
-** Service的生命周期
+*** Service的生命周期
 Service的生命周期内，有四种状态：uninited，inited， started， stopped。正常情况
 下Service的生命周期应该是 uninited -> inited -> started -> stopped。在转变到各个
 状态之前，它们对应的方法会被调用（例如调用Service的init方法使得Service的状态从
@@ -18,7 +18,7 @@ uninited转变为inited）。然而有些状态是不能转变到另一个状态
 | started  | false    | false  | true    | true    |
 | stopped  | false    | false  | false   | true    |
 
-** Service的主要方法
+*** Service的主要方法
 + init(Configuration)： 初始化服务配置
 + start()： 启动服务方法
 + stop(): 停止服务方法
@@ -30,14 +30,21 @@ uninited转变为inited）。然而有些状态是不能转变到另一个状态
 + waitForServiceToStop(timeout): 用来停止服务。
 + getLifecycleHistory: 获得服务的生命周期历史。
 
-** CompositeService(组合服务)
+*** CompositeService(组合服务)
 Resource Manager就是一个CompositeService，如前面提到它由许多更细粒度的服务组成,
 本身又要表现出一个服务的特性。CompositeService和组成它的所有服务要表现出一致
 的状态，这意味着当Resource Manager初始化的时候，组成它的所有服务都要进行初始化。
 
-** 源代码
+*** 源代码
 + [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/Service.java][Service]]
 + [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/AbstractService.java][AbstractService]]
 + [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/CompositeService.java][CompositeService]]
 
-* 一个具体服务
+** Dispatcher
+Dispatcher分发器，Resource Manager将Application Master，Node Manager发送过来的请
+求封装成不同类型的Event，由通用的Dispatcher分发到一个AsyncDispatcher，在由这个
+AsyncDispatcher交给注册了该事件类型的EventDispatcher处理。
+[[file:Dispatcher.png]]
+
+AsyncDispatcher被分装成了一个服务，其次它之所以是一个异步的Dispatcher，原因就是
+使用了一个阻塞队列用来做缓冲。
