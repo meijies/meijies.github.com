@@ -1,13 +1,15 @@
-#+TITLE: 基础知识
+#+TITLE: Apache Yarn 源码阅读基础知识
 * Service
 在这里，我大胆将Hadoop中的Service定义为一组独立运行的功能集合。这个独立运行表示
 它们可能单独运行在一个进程或者一个线程中。在Apache Yarn中，Resource Manager和
 Node Manager都是一个Service，而它们本身又由许多更细粒度的服务构成。既然Service是
 独立运行，它们就会有自己的生命周期，相应的初始化，启动，停止等实现。
 ** Service的生命周期
-正常情况下Service的生命周期应该是 uninited -> inited -> started -> stopped。在转
-变到各个状态之前，它们对应的方法会被调用（例如调用Service的init方法使得Service的
-状态从uninited转变为inited）
+Service的生命周期内，有四种状态：uninited，inited， started， stopped。正常情况
+下Service的生命周期应该是 uninited -> inited -> started -> stopped。在转变到各个
+状态之前，它们对应的方法会被调用（例如调用Service的init方法使得Service的状态从
+uninited转变为inited）。然而有些状态是不能转变到另一个状态的，下表描述了这种约
+束。的一个false表示，uninited状态不能转变为uninited状态。
 
 |          | uninited | inited | started | stopped |
 |----------+----------+--------+---------+---------|
@@ -15,3 +17,27 @@ Node Manager都是一个Service，而它们本身又由许多更细粒度的服�
 | inited   | false    | true   | true    | true    |
 | started  | false    | false  | true    | true    |
 | stopped  | false    | false  | false   | true    |
+
+** Service的主要方法
++ init(Configuration)： 初始化服务配置
++ start()： 启动服务方法
++ stop(): 停止服务方法
++ close(): 用来释放资源
++ registerServiceListener(ServiceStateChangeListener): 注册服务状态改变监听器
++ unregisterServiceListener(ServiceStateChangeListener): 取消服务状态改变监听器
+  的注册
++ getFailureState(): 用来了解服务在生命周期中的哪一步失败了
++ waitForServiceToStop(timeout): 用来停止服务。
++ getLifecycleHistory: 获得服务的生命周期历史。
+
+** CompositeService(组合服务)
+Resource Manager就是一个CompositeService，如前面提到它由许多更细粒度的服务组成,
+本身又要表现出一个服务的特性。CompositeService和组成它的所有服务要表现出一致
+的状态，这意味着当Resource Manager初始化的时候，组成它的所有服务都要进行初始化。
+
+** 源代码
++ [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/Service.java][Service]]
++ [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/AbstractService.java][AbstractService]]
++ [[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/service/CompositeService.java][CompositeService]]
+
+* 一个具体服务
