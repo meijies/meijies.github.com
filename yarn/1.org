@@ -9,7 +9,7 @@ Service的生命周期内，有四种状态：uninited，inited， started， st
 下Service的生命周期应该是 uninited -> inited -> started -> stopped。在转变到各个
 状态之前，它们对应的方法会被调用（例如调用Service的init方法使得Service的状态从
 uninited转变为inited）。然而有些状态是不能转变到另一个状态的，下表描述了这种约
-束。的一个false表示，uninited状态不能转变为uninited状态。
+束。表中第一个false表示，uninited（左侧）状态不能转变为uninited（上方）状态。
 
 |          | uninited | inited | started | stopped |
 |----------+----------+--------+---------+---------|
