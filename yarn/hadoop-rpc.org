@@ -1,0 +1,26 @@
++ TITLE: Hadoop Rpc
+** Hadoop RPC 协议格式
+** ClientRMService如何使用Hadoop RPC
+#+BEGIN_SRC plantuml :file clientRMService-hadoop-rpc-usage.png
+@startuml
+interface  ApplicationClientProtocol
+class ClientRMService
+ApplicationClientProtocol <|--  ClientRMService
+
+interface "ApplicationClientProtocolService.BlockingInterface"
+interface ApplicationClientProtocolPB
+interface BlockingService
+"ApplicationClientProtocolService.BlockingInterface" <|-- ApplicationClientProtocolPB
+BlockingService *-- "ApplicationClientProtocolService.BlockingInterface"
+
+class ApplicationClientProtocolPBServiceImpl {
+    ApplicationClientProtocol real
+}
+ApplicationClientProtocolPB <|-- ApplicationClientProtocolPBServiceImpl
+
+
+@enduml
+#+END_SRC
+
+#+RESULTS:
+[[file:clientRMService-hadoop-rpc-usage]]
