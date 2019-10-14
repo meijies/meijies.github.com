@@ -1,43 +1,53 @@
-+ TITLE: Hadoop Rpc
+#+TITLE: Hadoop Rpc
 ** Hadoop IPC服务端概述
 *** 结构图
 [[hadoop-rpc.png]]
 
 *** 名词解释
-+ Listener: 初始化ServerSocketChannel和Reader线程组，接受网络请求
-  （SelectionKey.OP_ACCEPT），并随机选择Reader来处理，它运行在单独的线程中。
-+ Reader: 当网络数据可读的时候，Reader会为每个请求初始化一个Connection来读取和处
++ *Listener*: 初始化ServerSocketChannel和Reader线程组，接受网络请求
+  (SelectionKey.OP_ACCEPT)，并随机选择Reader来处理，它运行在单独的线程中。
++ *Reader*: 当网络数据可读的时候，Reader会为每个请求初始化一个Connection来读取和处
   理数据。每个Reader运行在单独的线程中，Reader和Connection是一对多关系。
-+ Connection: 根据协议格式读取和处理请求数据，将真正的Rpc请求数据分装为RpcCall
++ *Connection*: 根据协议格式读取和处理请求数据，将真正的Rpc请求数据分装为RpcCall
   并放到CallQueue中。
-+ CallQueue：
-+ Handle: Handle从CallQueue中获得RPC请求，进行Rpc调用处理，并将结果放到
++ *CallQueue*:
++ *Handle**: Handle从CallQueue中获得RPC请求，进行Rpc调用处理，并将结果放到
   Connection的一个链表中,运行在单独的线程组。
-+ Responder: 从链表中获得请求处理结果，返回给客户端。
++ *Responder*: 从链表中获得请求处理结果，返回给客户端。
 
-** Hadoop RPC 协议格式
+** Hadoop IPC和RPC的协议格式
 [[hadoop-rpc-fragement.png]]
+*** RPC Fragement
+| 数据项           | 描述                                     |
+|------------------+------------------------------------------|
+| hrpc             | 用来表示当前请求是一个Hadoop RPC请求     |
+| version          | Hadoop RPC的版本，版本历史见[[https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/ipc/RpcConstants.java][RpcConstants]] |
+| Service          | 当前还没有用处                           |
+| AuthProtocol     | 认证协议，0为None，-33为SASL             |
+| RpcPackageLength | RpcPacket的长度                          |
+| RpcPacket        | Rpc数据包                                |
+
+*** RPC Packet
+| 数据项        | 描述                                                                                                                        |
+|---------------+-----------------------------------------------------------------------------------------------------------------------------|
+| rpcKind       | Rpc引擎类型:1为RPC_BUILTIN，用于测试；2为RPC_WRITABLE，使用WritableRpcEngine, 3为RPC_PROTOCOL_BUFFER，使用ProtobufRpcEngine |
+| rpcOp         | Rpc操作类型:0为RPC_FINAL_PACKET;1为RPC_CONTINUATION_PACKET,还没有实现;2为RPC_CLOSE_CONNECTION,关闭rpc连接                   |
+| callId        | 一个序列化数字,请求的响应将会包含这个字段                                                                                   |
+| clientId      | 全局唯一的客户端id                                                                                                          |
+| retryCount    | 重试次数，默认值为-1                                                                                                        |
+| traceInfo     | 跟踪信息                                                                                                                    |
+| callerContext | Rpc Caller上下文                                                                                                            |
+| stateId       | 上一次的全局状态ID                                                                                                          |
+
+*** 使用ProtobufRpcEngine的Rpc请求协议
+| 数据项                     | 描述                           |
+| methodName                 | 远程过程调用的方法名           |
+| declaringClassProtocolName | 远程过程调用方法所属类的全路径 |
+| clientProtocolVersion      | 客户端Rpc接口版本              |
+
+** Java NIO与Hadoop IPC
+
+
 ** ClientRMService如何使用Hadoop RPC
-#+BEGIN_SRC plantuml :file clientRMService-hadoop-rpc-usage.png
-@startuml
-interface  ApplicationClientProtocol
-class ClientRMService
-ApplicationClientProtocol <|--  ClientRMService
-
-interface "ApplicationClientProtocolService.BlockingInterface"
-interface ApplicationClientProtocolPB
-interface BlockingService
-"ApplicationClientProtocolService.BlockingInterface" <|-- ApplicationClientProtocolPB
-BlockingService *-- "ApplicationClientProtocolService.BlockingInterface"
-
-class ApplicationClientProtocolPBServiceImpl {
-    ApplicationClientProtocol real
-}
-ApplicationClientProtocolPB <|-- ApplicationClientProtocolPBServiceImpl
-
-
-@enduml
-#+END_SRC
 
 #+RESULTS:
-[[file:clientRMService-hadoop-rpc-usage]]
